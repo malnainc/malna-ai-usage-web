@@ -28,6 +28,15 @@ describe('latestSnapshots', () => {
     const s = latestSnapshots(rows)
     expect(s.get('a@x|2026-05')!.total_tokens).toBe(150)
   })
+
+  it('breaks ties on same snapshot_date by captured_at (same-day re-run)', () => {
+    const rows = [
+      row({ member_email: 'a@x', month: '2026-06', snapshot_date: '2026-06-05', captured_at: '2026-06-05T10:00:00+09:00', total_tokens: 100 }),
+      row({ member_email: 'a@x', month: '2026-06', snapshot_date: '2026-06-05', captured_at: '2026-06-05T14:00:00+09:00', total_tokens: 120 }),
+    ]
+    const s = latestSnapshots(rows)
+    expect(s.get('a@x|2026-06')!.total_tokens).toBe(120)
+  })
 })
 
 describe('buildRanking', () => {

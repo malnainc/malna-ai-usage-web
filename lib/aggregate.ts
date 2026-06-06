@@ -5,7 +5,11 @@ export function latestSnapshots(rows: UsageRow[]): Map<string, UsageRow> {
   for (const r of rows) {
     const key = `${r.member_email}|${r.month}`
     const cur = best.get(key)
-    if (!cur || r.snapshot_date > cur.snapshot_date) best.set(key, r)
+    const newer =
+      !cur ||
+      r.snapshot_date > cur.snapshot_date ||
+      (r.snapshot_date === cur.snapshot_date && r.captured_at > cur.captured_at)
+    if (newer) best.set(key, r)
   }
   return best
 }
