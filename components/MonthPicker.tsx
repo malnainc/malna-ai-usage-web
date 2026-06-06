@@ -8,7 +8,7 @@ export function MonthPicker({ months, current }: { months: string[]; current: st
   if (months.length === 0) return null
   return (
     <select
-      className="border border-gray-300 rounded px-2 py-1 text-sm"
+      className="border border-border rounded-lg px-3 py-1.5 text-sm bg-surface text-foreground focus:outline-none focus:ring-2 focus:ring-brand/40"
       value={current}
       onChange={(e) => {
         const p = new URLSearchParams(sp.toString())
