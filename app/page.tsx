@@ -39,6 +39,7 @@ export default async function Page({
   const teamTotalTokens = teams.reduce((s, t) => s + t.total_tokens, 0)
   const teamTotalCost = teams.reduce((s, t) => s + t.cost_usd, 0)
   const memberCount = ranking.length
+  const topName = ranking[0]?.member_name ?? ''
 
   return (
     <div className="min-h-full">
@@ -53,19 +54,31 @@ export default async function Page({
       </header>
 
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-        {/* サマリー */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="bg-surface border border-border rounded-2xl p-5">
-            <div className="text-xs text-muted">チーム合計トークン（{month || '—'}）</div>
-            <div className="text-3xl font-bold mt-1 tabular-nums">{fmtTokens(teamTotalTokens)}</div>
+        {/* ヒーロー */}
+        <div className="rounded-3xl p-7 md:p-8 text-white bg-gradient-to-br from-[#00c4cc] via-[#1aa3c4] to-[#2563eb] shadow-lg shadow-brand/20">
+          <div className="text-sm/relaxed opacity-90">チーム全体のAI活用量（{month || '—'}）</div>
+          <div className="mt-1 flex items-end gap-3 flex-wrap">
+            <div className="text-5xl md:text-6xl font-extrabold tabular-nums tracking-tight">
+              {fmtTokens(teamTotalTokens)}
+            </div>
+            <div className="text-lg font-semibold opacity-95 mb-1">トークン</div>
           </div>
-          <div className="bg-surface border border-border rounded-2xl p-5">
-            <div className="text-xs text-muted">換算コスト</div>
-            <div className="text-3xl font-bold mt-1 tabular-nums text-brand-dark">{fmtCost(teamTotalCost)}</div>
-          </div>
-          <div className="bg-surface border border-border rounded-2xl p-5 col-span-2 md:col-span-1">
-            <div className="text-xs text-muted">参加メンバー</div>
-            <div className="text-3xl font-bold mt-1 tabular-nums">{memberCount}<span className="text-base font-normal text-muted ml-1">名</span></div>
+          <div className="mt-3 flex gap-6 text-sm">
+            <div>
+              <span className="opacity-80">換算コスト </span>
+              <span className="font-bold tabular-nums">{fmtCost(teamTotalCost)}</span>
+            </div>
+            <div>
+              <span className="opacity-80">参加 </span>
+              <span className="font-bold tabular-nums">{memberCount}</span>
+              <span className="opacity-80"> 名</span>
+            </div>
+            {topName && (
+              <div>
+                <span className="opacity-80">トップ </span>
+                <span className="font-bold">{topName}</span>
+              </div>
+            )}
           </div>
         </div>
 
