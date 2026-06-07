@@ -10,7 +10,8 @@ import { RankingTable } from '@/components/RankingTable'
 import { TeamBreakdown } from '@/components/TeamBreakdown'
 import { TrendChart } from '@/components/TrendChart'
 import { MonthPicker } from '@/components/MonthPicker'
-import { fmtTokens, fmtCost } from '@/lib/format'
+import { CountUp } from '@/components/CountUp'
+import { fmtCost } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,14 +33,25 @@ export default async function Page({
   const months = listMonths(rows)
   const sp = await searchParams
   const month = sp.month && months.includes(sp.month) ? sp.month : months[0] ?? ''
-  const ranking = buildRanking(rows, month, prevMonthOf(month))
+  const prevMonth = prevMonthOf(month)
+  const ranking = buildRanking(rows, month, prevMonth)
   const teams = teamBreakdown(rows, month)
   const trend = monthlyTrend(rows)
+
+  // 先月の順位（順位変動バッジ用）
+  const prevRanking = buildRanking(rows, prevMonth, prevMonthOf(prevMonth))
+  const prevRanks: Record<string, number> = {}
+  prevRanking.forEach((r, i) => {
+    prevRanks[r.member_email] = i
+  })
 
   const teamTotalTokens = teams.reduce((s, t) => s + t.total_tokens, 0)
   const teamTotalCost = teams.reduce((s, t) => s + t.cost_usd, 0)
   const memberCount = ranking.length
   const topName = ranking[0]?.member_name ?? ''
+  // 当月がこれまでの最高か（trendは月昇順）
+  const maxTrend = trend.reduce((m, t) => Math.max(m, t.total_tokens), 0)
+  const isRecordHigh = trend.length > 1 && teamTotalTokens >= maxTrend && teamTotalTokens > 0
 
   return (
     <div className="min-h-full">
@@ -55,11 +67,18 @@ export default async function Page({
 
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-6">
         {/* ヒーロー */}
-        <div className="rounded-3xl p-7 md:p-8 text-white bg-gradient-to-br from-[#00c4cc] via-[#1aa3c4] to-[#2563eb] shadow-lg shadow-brand/20">
-          <div className="text-sm/relaxed opacity-90">チーム全体のAI活用量（{month || '—'}）</div>
+        <div className="anim-fade-up rounded-3xl p-7 md:p-8 text-white bg-gradient-to-br from-[#00c4cc] via-[#1aa3c4] to-[#2563eb] shadow-lg shadow-brand/20">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-sm/relaxed opacity-90">チーム全体のAI活用量（{month || '—'}）</div>
+            {isRecordHigh && (
+              <span className="anim-pop text-xs font-bold text-[#0b6b3a] bg-white/95 rounded-full px-3 py-1 shadow-sm">
+                過去最高を更新中
+              </span>
+            )}
+          </div>
           <div className="mt-1 flex items-end gap-3 flex-wrap">
-            <div className="text-5xl md:text-6xl font-extrabold tabular-nums tracking-tight">
-              {fmtTokens(teamTotalTokens)}
+            <div className="text-5xl md:text-6xl font-extrabold tracking-tight">
+              <CountUp to={teamTotalTokens} />
             </div>
             <div className="text-lg font-semibold opacity-95 mb-1">トークン</div>
           </div>
@@ -83,7 +102,7 @@ export default async function Page({
         </div>
 
         <Card title={`メンバー別ランキング（${month || '—'}）`}>
-          <RankingTable ranking={ranking} />
+          <RankingTable ranking={ranking} prevRanks={prevRanks} />
         </Card>
 
         <Card title="チーム別">

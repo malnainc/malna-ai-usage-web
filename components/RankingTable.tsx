@@ -35,7 +35,23 @@ function Delta({ d }: { d: number | null }) {
   )
 }
 
-export function RankingTable({ ranking }: { ranking: RankingEntry[] }) {
+function Move({ cur, prev }: { cur: number; prev: number | undefined }) {
+  if (prev === undefined) {
+    return <span className="text-[10px] font-semibold text-brand-dark bg-brand-soft rounded px-1.5 py-0.5">NEW</span>
+  }
+  const diff = prev - cur
+  if (diff > 0) return <span className="text-[10px] font-semibold text-pos">▲{diff}</span>
+  if (diff < 0) return <span className="text-[10px] font-semibold text-neg">▼{-diff}</span>
+  return <span className="text-[10px] text-muted">→</span>
+}
+
+export function RankingTable({
+  ranking,
+  prevRanks,
+}: {
+  ranking: RankingEntry[]
+  prevRanks?: Record<string, number>
+}) {
   if (ranking.length === 0) {
     return <p className="text-sm text-muted">この月のデータはまだありません。</p>
   }
@@ -45,21 +61,34 @@ export function RankingTable({ ranking }: { ranking: RankingEntry[] }) {
     <ul className="space-y-2">
       {ranking.map((r, i) => {
         const pct = Math.max(2, Math.round((r.total_tokens / max) * 100))
+        const isTop = i === 0
         return (
           <li
             key={r.member_email}
-            className="relative rounded-xl border border-border px-4 py-3 overflow-hidden hover:border-brand/50 transition-colors"
+            className={`relative rounded-xl px-4 py-3 overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md ${
+              isTop
+                ? 'border-2 border-[#f5b301] shadow-[0_0_0_3px_rgba(245,179,1,0.12)] bg-[#fffdf5]'
+                : 'border border-border'
+            }`}
           >
-            {/* 実績バー（背景） */}
+            {/* 実績バー（背景・アニメ） */}
             <div
-              className="absolute inset-y-0 left-0 bg-brand-soft"
-              style={{ width: `${pct}%` }}
+              className="anim-bar absolute inset-y-0 left-0 bg-brand-soft"
+              style={{ width: `${pct}%`, animationDelay: `${i * 80}ms` }}
               aria-hidden
             />
             <div className="relative flex items-center gap-3">
               <RankBadge i={i} />
               <div className="min-w-0 flex-1">
-                <div className="font-semibold truncate">{r.member_name}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold truncate">{r.member_name}</span>
+                  {isTop && (
+                    <span className="text-[10px] font-bold text-white bg-[#f5b301] rounded-full px-2 py-0.5 anim-pop">
+                      TOP
+                    </span>
+                  )}
+                  <Move cur={i} prev={prevRanks?.[r.member_email]} />
+                </div>
                 <div className="text-xs text-muted truncate">
                   {r.team || '—'}　Claude {fmtCost(r.claude_cost)} / Codex {fmtCost(r.codex_cost)}
                 </div>
