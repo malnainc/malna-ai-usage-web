@@ -12,6 +12,7 @@ import { TrendChart } from '@/components/TrendChart'
 import { MonthPicker } from '@/components/MonthPicker'
 import { CountUp } from '@/components/CountUp'
 import { fmtCost } from '@/lib/format'
+import { isReliableMonth, RELIABLE_FROM } from '@/lib/config'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +52,12 @@ export default async function Page({
   const topName = ranking[0]?.member_name ?? ''
   // 当月がこれまでの最高か（trendは月昇順）
   const maxTrend = trend.reduce((m, t) => Math.max(m, t.total_tokens), 0)
-  const isRecordHigh = trend.length > 1 && teamTotalTokens >= maxTrend && teamTotalTokens > 0
+  const reliable = isReliableMonth(month)
+  // 過去最高は正データ（信頼できる月）の中で判定する
+  const maxReliable = trend
+    .filter((t) => isReliableMonth(t.month))
+    .reduce((m, t) => Math.max(m, t.total_tokens), 0)
+  const isRecordHigh = reliable && teamTotalTokens >= maxReliable && teamTotalTokens > 0
 
   return (
     <div className="min-h-full">
@@ -101,6 +107,14 @@ export default async function Page({
           </div>
         </div>
 
+        {!reliable && (
+          <div className="rounded-xl border border-[#f0c36d] bg-[#fff8e7] px-4 py-3 text-sm text-[#8a5a00]">
+            <span className="font-semibold">参考値です。</span>{' '}
+            {month} はClaude Codeのログ保持期間より前のため、実際の利用量より少なく表示されます。
+            正確なデータは {RELIABLE_FROM} 以降をご覧ください。
+          </div>
+        )}
+
         <Card title={`メンバー別ランキング（${month || '—'}）`}>
           <RankingTable ranking={ranking} prevRanks={prevRanks} />
         </Card>
@@ -115,6 +129,7 @@ export default async function Page({
 
         <p className="text-xs text-muted pt-2">
           指標: ccusage API換算値（定額プランの実請求とは別物です）。利用量の傾向把握用。
+          {RELIABLE_FROM} より前の月は、Claude Codeのログ保持期間の都合で過少表示（参考値）。
         </p>
       </main>
     </div>

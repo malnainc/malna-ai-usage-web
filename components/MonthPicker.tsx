@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
+import { isReliableMonth } from '@/lib/config'
 
 export function MonthPicker({ months, current }: { months: string[]; current: string }) {
   const router = useRouter()
@@ -18,7 +19,7 @@ export function MonthPicker({ months, current }: { months: string[]; current: st
     >
       {months.map((m) => (
         <option key={m} value={m}>
-          {m}
+          {m}{isReliableMonth(m) ? '' : '（参考）'}
         </option>
       ))}
     </select>
