@@ -10,9 +10,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const email = (profile?.email as string | undefined) ?? ''
       return email.endsWith('@malna.co.jp')
     },
-    // middlewareでの保護: ログイン必須
-    authorized({ auth }) {
-      return Boolean(auth?.user)
+    // middlewareでの保護: 未認証はsigninにリダイレクト
+    authorized({ auth, request }) {
+      if (auth?.user) return true
+      const url = new URL('/signin', request.url)
+      return Response.redirect(url)
     },
   },
 })
