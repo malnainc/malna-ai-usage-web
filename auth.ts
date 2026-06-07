@@ -1,23 +1,19 @@
-import NextAuth from 'next-auth'
-import Google from 'next-auth/providers/google'
+// next-auth v4 configuration
+import { type NextAuthOptions } from 'next-auth'
+import GoogleProvider from 'next-auth/providers/google'
 
-export const { handlers, auth, signIn, signOut } = NextAuth(() => ({
+export const authOptions: NextAuthOptions = {
   providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID!,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
   pages: { signIn: '/signin' },
   callbacks: {
-    signIn({ profile }) {
+    async signIn({ profile }) {
       const email = (profile?.email as string | undefined) ?? ''
       return email.endsWith('@malna.co.jp')
     },
-    authorized({ auth: session, request }) {
-      if (session?.user) return true
-      const url = new URL('/signin', request.url)
-      return Response.redirect(url)
-    },
   },
-}))
+}

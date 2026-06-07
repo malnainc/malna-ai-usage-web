@@ -1,10 +1,10 @@
 // Next.js 16: proxy.ts replaces middleware.ts
+// next-auth v4: use JWT token check (lightweight, no DB call)
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { auth } from '@/auth'
+import { getToken } from 'next-auth/jwt'
 
 export async function proxy(request: NextRequest) {
-  const session = await auth()
   const { pathname } = request.nextUrl
 
   // 認証不要パス
@@ -17,8 +17,13 @@ export async function proxy(request: NextRequest) {
 
   if (isPublic) return NextResponse.next()
 
-  // 未ログイン → /signin にリダイレクト
-  if (!session?.user) {
+  // JWT token確認（next-auth v4）
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET!,
+  })
+
+  if (!token) {
     const url = request.nextUrl.clone()
     url.pathname = '/signin'
     return NextResponse.redirect(url)

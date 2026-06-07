@@ -1,4 +1,6 @@
-import { signIn } from '@/auth'
+'use client'
+
+import { signIn } from 'next-auth/react'
 
 export default function SignIn() {
   return (
@@ -11,19 +13,12 @@ export default function SignIn() {
         <p className="text-sm text-muted">
           malnaのGoogleアカウント（@malna.co.jp）でログインしてください。
         </p>
-        <form
-          action={async () => {
-            'use server'
-            await signIn('google', { redirectTo: '/' })
-          }}
+        <button
+          onClick={() => signIn('google', { callbackUrl: '/' })}
+          className="w-full border border-border rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-brand-soft transition-colors"
         >
-          <button
-            type="submit"
-            className="w-full border border-border rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-brand-soft transition-colors"
-          >
-            Googleでログイン
-          </button>
-        </form>
+          Googleでログイン
+        </button>
         <p className="text-xs text-muted">
           @malna.co.jp 以外のアカウントはアクセスできません。
         </p>

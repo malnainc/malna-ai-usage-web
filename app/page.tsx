@@ -1,4 +1,6 @@
 import { getRows } from '@/lib/data'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { Session } from 'next-auth'
 import {
   buildRanking,
   teamBreakdown,
