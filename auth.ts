@@ -12,8 +12,10 @@ export const authOptions: NextAuthOptions = {
   pages: { signIn: '/signin' },
   callbacks: {
     async signIn({ profile }) {
+      // TODO: 動作確認後に @malna.co.jp 制限を戻す
       const email = (profile?.email as string | undefined) ?? ''
-      return email.endsWith('@malna.co.jp')
+      console.log('[signIn callback] email:', email)
+      return true // 一時的に全員許可してOAuthフロー自体を確認
     },
   },
 }
