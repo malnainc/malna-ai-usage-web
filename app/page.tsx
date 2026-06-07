@@ -1,4 +1,4 @@
-import { readSheetRows } from '@/lib/sheets'
+import { getRows } from '@/lib/data'
 import {
   buildRanking,
   teamBreakdown,
@@ -30,7 +30,7 @@ export default async function Page({
 }: {
   searchParams: Promise<{ month?: string }>
 }) {
-  const rows = await readSheetRows()
+  const rows = await getRows()
   const months = listMonths(rows)
   const sp = await searchParams
   const month = sp.month && months.includes(sp.month) ? sp.month : months[0] ?? ''
