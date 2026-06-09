@@ -30,5 +30,10 @@ export type RankingEntry = {
   claude_cost: number
   codex_tokens: number
   codex_cost: number
+  /** raw token breakdown for percentage display */
+  input_tokens: number
+  output_tokens: number
+  cache_create_tokens: number
+  cache_read_tokens: number
   delta_pct: number | null
 }

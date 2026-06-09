@@ -1,6 +1,18 @@
 import type { RankingEntry } from '@/lib/types'
 import { fmtTokens, fmtCost, fmtDelta } from '@/lib/format'
 
+/** token breakdown percentages (0-100) */
+function breakdown(r: RankingEntry) {
+  const total = r.total_tokens || 1
+  const actualIO = r.input_tokens + r.output_tokens + r.cache_create_tokens
+  const cacheRead = r.cache_read_tokens
+  const claudePct = Math.round((r.claude_tokens / total) * 10) / 10
+  const codexPct = Math.round((r.codex_tokens / total) * 10) / 10
+  const ioPct = Math.round((actualIO / total) * 10) / 10
+  const crPct = Math.round((cacheRead / total) * 10) / 10
+  return { claudePct, codexPct, ioPct, crPct, actualIO }
+}
+
 const MEDAL = ['#f5b301', '#aab1bd', '#cd7f32'] // gold / silver / bronze
 
 function RankBadge({ i }: { i: number }) {
@@ -92,6 +104,48 @@ export function RankingTable({
                 <div className="text-xs text-muted truncate">
                   {r.team || '—'}　Claude {fmtCost(r.claude_cost)} / Codex {fmtCost(r.codex_cost)}
                 </div>
+                {/* token breakdown bar */}
+                {(() => {
+                  const { claudePct, codexPct, ioPct, crPct } = breakdown(r)
+                  return (
+                    <div className="mt-1.5">
+                      {/* segmented bar: cache_read | cache_create+IO (actual) */}
+                      <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-[#e8f7f8]">
+                        <div
+                          className="bg-brand h-full"
+                          style={{ width: `${crPct}%` }}
+                          title={`キャッシュ読み ${crPct}%`}
+                        />
+                        <div
+                          className="bg-[#2563eb] h-full"
+                          style={{ width: `${ioPct}%` }}
+                          title={`実I/O ${ioPct}%`}
+                        />
+                      </div>
+                      <div className="flex gap-2.5 mt-1 text-[10px] text-muted tabular-nums flex-wrap">
+                        <span>
+                          <span
+                            className="inline-block w-2 h-2 rounded-sm mr-0.5 align-middle"
+                            style={{ background: '#00c4cc' }}
+                          />
+                          キャッシュ {crPct}%
+                        </span>
+                        <span>
+                          <span
+                            className="inline-block w-2 h-2 rounded-sm mr-0.5 align-middle"
+                            style={{ background: '#2563eb' }}
+                          />
+                          実I/O {ioPct}%
+                        </span>
+                        {r.codex_tokens > 0 && (
+                          <span className="ml-1 text-muted">
+                            Claude {claudePct}% / Codex {codexPct}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
               <div className="text-right shrink-0">
                 <div className="font-bold tabular-nums leading-tight">{fmtTokens(r.total_tokens)}</div>

@@ -41,6 +41,10 @@ export function buildRanking(rows: UsageRow[], month: string, prevMonth: string)
       claude_cost: r.claude_cost,
       codex_tokens: r.codex_tokens,
       codex_cost: r.codex_cost,
+      input_tokens: r.input,
+      output_tokens: r.output,
+      cache_create_tokens: r.cache_create,
+      cache_read_tokens: r.cache_read,
       delta_pct,
     }
   })
