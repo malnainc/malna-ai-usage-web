@@ -1,4 +1,14 @@
-import type { UsageRow, RankingEntry } from './types'
+import type { UsageRow, RankingEntry, ModelFamily, ModelFamilyUsage } from './types'
+
+// 収集側 MODEL_FAMILIES と対応する正準順序
+export const MODEL_FAMILY_ORDER: ModelFamily[] = [
+  'opus',
+  'sonnet',
+  'haiku',
+  'fable',
+  'codex',
+  'other',
+]
 
 export function latestSnapshots(rows: UsageRow[]): Map<string, UsageRow> {
   const best = new Map<string, UsageRow>()
@@ -45,6 +55,7 @@ export function buildRanking(rows: UsageRow[], month: string, prevMonth: string)
       output_tokens: r.output,
       cache_create_tokens: r.cache_create,
       cache_read_tokens: r.cache_read,
+      model_families: familiesFromRow(r),
       delta_pct,
     }
   })
@@ -81,11 +92,107 @@ export function monthlyTrend(rows: UsageRow[]): TrendRow[] {
   return [...map.values()].sort((a, b) => a.month.localeCompare(b.month))
 }
 
+/**
+ * model_breakdown のJSON文字列を安全にパースし、形状を検証する。
+ * 旧データ（空・null・壊れたJSON）・配列・非有限値・負値はスキップして空を返す。
+ */
+function parseBreakdown(raw: string | null | undefined): Record<string, { tokens: number; cost: number }> {
+  if (!raw) return {}
+  try {
+    const v = JSON.parse(raw)
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return {}
+    const out: Record<string, { tokens: number; cost: number }> = {}
+    for (const [k, entry] of Object.entries(v)) {
+      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+      const t = Number((entry as Record<string, unknown>).tokens ?? 0)
+      const c = Number((entry as Record<string, unknown>).cost ?? 0)
+      if (!isFinite(t) || t < 0 || !isFinite(c) || c < 0) continue
+      out[k] = { tokens: Math.floor(t), cost: c }
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+/** 1行(=1メンバー1月)の model_breakdown をファミリー別配列に変換する（正準順序）。 */
+export function familiesFromRow(row: UsageRow): ModelFamilyUsage[] {
+  const acc = new Map<ModelFamily, { tokens: number; cost: number }>()
+  const bd = parseBreakdown(row.model_breakdown)
+  for (const [fam, v] of Object.entries(bd)) {
+    const family = (MODEL_FAMILY_ORDER as string[]).includes(fam)
+      ? (fam as ModelFamily)
+      : 'other'
+    const a = acc.get(family) ?? { tokens: 0, cost: 0 }
+    a.tokens += v.tokens
+    a.cost += v.cost
+    acc.set(family, a)
+  }
+  return MODEL_FAMILY_ORDER.filter((f) => acc.has(f)).map((f) => ({
+    family: f,
+    tokens: acc.get(f)!.tokens,
+    cost: acc.get(f)!.cost,
+  }))
+}
+
+export type ModelBreakdownResult = {
+  families: ModelFamilyUsage[]
+  /** 当月にモデル別内訳データを1件でも持つメンバーがいたか（無ければ旧データのみ） */
+  hasData: boolean
+}
+
+/** 当月のチーム合計をモデルファミリー別のトークン/コストに集計する。 */
+export function modelBreakdown(rows: UsageRow[], month: string): ModelBreakdownResult {
+  const cur = snapshotsForMonth(rows, month)
+  const acc = new Map<ModelFamily, { tokens: number; cost: number }>()
+  let hasData = false
+  for (const r of cur) {
+    for (const f of familiesFromRow(r)) {
+      if (f.tokens || f.cost) hasData = true
+      const a = acc.get(f.family) ?? { tokens: 0, cost: 0 }
+      a.tokens += f.tokens
+      a.cost += f.cost
+      acc.set(f.family, a)
+    }
+  }
+  const families = MODEL_FAMILY_ORDER.filter((f) => acc.has(f)).map((f) => ({
+    family: f,
+    tokens: acc.get(f)!.tokens,
+    cost: acc.get(f)!.cost,
+  }))
+  return { families, hasData }
+}
+
+export type CoverageMember = { member_name: string; team: string; member_email: string }
+export type CoverageResult = {
+  active: CoverageMember[]
+  /** 先月は記録があったが当月は記録がないメンバー（離脱・休眠の可能性） */
+  dormant: CoverageMember[]
+  /** 先月のベースラインデータが存在するか（falseなら "全員アクティブ" は表示しない） */
+  hasPrevData: boolean
+}
+
+/** 稼働カバレッジ: 当月アクティブ／先月いたが当月いない休眠メンバーを抽出する。 */
+export function coverage(rows: UsageRow[], month: string, prevMonth: string): CoverageResult {
+  const cur = snapshotsForMonth(rows, month)
+  const curEmails = new Set(cur.map((r) => r.member_email))
+  const prev = snapshotsForMonth(rows, prevMonth)
+  const active = cur
+    .map((r) => ({ member_name: r.member_name, team: r.team, member_email: r.member_email }))
+    .sort((a, b) => a.member_name.localeCompare(b.member_name, 'ja'))
+  const dormant = prev
+    .filter((r) => !curEmails.has(r.member_email))
+    .map((r) => ({ member_name: r.member_name, team: r.team, member_email: r.member_email }))
+    .sort((a, b) => a.member_name.localeCompare(b.member_name, 'ja'))
+  return { active, dormant, hasPrevData: prev.length > 0 }
+}
+
 export function listMonths(rows: UsageRow[]): string[] {
   return [...new Set(rows.map((r) => r.month))].filter(Boolean).sort((a, b) => b.localeCompare(a))
 }
 
 export function prevMonthOf(month: string): string {
+  if (!month || !/^\d{4}-\d{2}$/.test(month)) return ''
   const [y, m] = month.split('-').map(Number)
   const d = new Date(Date.UTC(y, m - 1, 1))
   d.setUTCMonth(d.getUTCMonth() - 1)

@@ -35,6 +35,7 @@ export async function upsertSnapshots(rows: UsageRow[]): Promise<number> {
     codex_cost: r.codex_cost,
     models_used: r.models_used,
     ccusage_version: r.ccusage_version,
+    model_breakdown: r.model_breakdown ?? '',
   }))
   const { error } = await admin()
     .from('usage_snapshots')

@@ -5,11 +5,15 @@ import {
   buildRanking,
   teamBreakdown,
   monthlyTrend,
+  modelBreakdown,
+  coverage,
   listMonths,
   prevMonthOf,
 } from '@/lib/aggregate'
 import { RankingTable } from '@/components/RankingTable'
 import { TeamBreakdown } from '@/components/TeamBreakdown'
+import { ModelBreakdown } from '@/components/ModelBreakdown'
+import { Coverage } from '@/components/Coverage'
 import { TrendChart } from '@/components/TrendChart'
 import { MonthPicker } from '@/components/MonthPicker'
 import { CountUp } from '@/components/CountUp'
@@ -39,6 +43,8 @@ export default async function Page({
   const prevMonth = prevMonthOf(month)
   const ranking = buildRanking(rows, month, prevMonth)
   const teams = teamBreakdown(rows, month)
+  const models = modelBreakdown(rows, month)
+  const cover = coverage(rows, month, prevMonth)
   const trend = monthlyTrend(rows)
 
   // 先月の順位（順位変動バッジ用）
@@ -117,12 +123,20 @@ export default async function Page({
           </div>
         )}
 
+        <Card title={`稼働状況（${month || '—'}）`}>
+          <Coverage coverage={cover} prevMonth={prevMonth} />
+        </Card>
+
         <Card title={`メンバー別ランキング（${month || '—'}）`}>
           <RankingTable ranking={ranking} prevRanks={prevRanks} />
         </Card>
 
         <Card title="チーム別">
           <TeamBreakdown teams={teams} />
+        </Card>
+
+        <Card title={`モデル別利用量（チーム合計・${month || '—'}）`}>
+          <ModelBreakdown families={models.families} hasData={models.hasData} />
         </Card>
 
         <Card title="月推移（チーム合計・億トークン）">
