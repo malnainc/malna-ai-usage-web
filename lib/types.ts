@@ -48,5 +48,7 @@ export type RankingEntry = {
   cache_read_tokens: number
   /** このメンバーのモデルファミリー別内訳（旧データでは空配列） */
   model_families: ModelFamilyUsage[]
+  /** models_used から導いた利用モデルファミリー一覧（量なし・旧データでも埋まる） */
+  model_families_present: ModelFamily[]
   delta_pct: number | null
 }

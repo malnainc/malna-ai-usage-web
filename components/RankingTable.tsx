@@ -2,34 +2,53 @@ import type { RankingEntry } from '@/lib/types'
 import { fmtTokens, fmtCost, fmtDelta } from '@/lib/format'
 import { MODEL_LABELS, MODEL_COLORS } from '@/lib/modelMeta'
 
-/** メンバーのモデルミックス（トークン構成）の細バー＋凡例 */
+/** メンバーのモデルミックス（トークン構成）の細バー＋凡例。量データがなければ presence ドットを表示。 */
 function ModelMix({ r }: { r: RankingEntry }) {
   const fams = r.model_families
-  if (!fams || fams.length === 0) return null
-  const total = fams.reduce((s, f) => s + f.tokens, 0) || 1
-  return (
-    <div className="mt-1.5">
-      <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-background/60">
-        {fams.map((f) => (
-          <div
-            key={f.family}
-            className="h-full"
-            style={{ width: `${(f.tokens / total) * 100}%`, backgroundColor: MODEL_COLORS[f.family] }}
-            title={`${MODEL_LABELS[f.family]} ${fmtTokens(f.tokens)} / ${fmtCost(f.cost)}`}
-          />
-        ))}
-      </div>
-      <div className="flex gap-2.5 mt-1 text-[10px] text-muted tabular-nums flex-wrap">
-        {fams.map((f) => (
-          <span key={f.family}>
-            <span
-              className="inline-block w-2 h-2 rounded-sm mr-0.5 align-middle"
-              style={{ background: MODEL_COLORS[f.family] }}
+  if (fams && fams.length > 0) {
+    const total = fams.reduce((s, f) => s + f.tokens, 0) || 1
+    return (
+      <div className="mt-1.5">
+        <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-background/60">
+          {fams.map((f) => (
+            <div
+              key={f.family}
+              className="h-full"
+              style={{ width: `${(f.tokens / total) * 100}%`, backgroundColor: MODEL_COLORS[f.family] }}
+              title={`${MODEL_LABELS[f.family]} ${fmtTokens(f.tokens)} / ${fmtCost(f.cost)}`}
             />
-            {MODEL_LABELS[f.family]} {Math.round((f.tokens / total) * 100)}%
-          </span>
-        ))}
+          ))}
+        </div>
+        <div className="flex gap-2.5 mt-1 text-[10px] text-muted tabular-nums flex-wrap">
+          {fams.map((f) => (
+            <span key={f.family}>
+              <span
+                className="inline-block w-2 h-2 rounded-sm mr-0.5 align-middle"
+                style={{ background: MODEL_COLORS[f.family] }}
+              />
+              {MODEL_LABELS[f.family]} {Math.round((f.tokens / total) * 100)}%
+            </span>
+          ))}
+        </div>
       </div>
+    )
+  }
+
+  // 量データなし → presence ドットのみ表示
+  const present = r.model_families_present
+  if (!present || present.length === 0) return null
+  return (
+    <div className="mt-1.5 flex gap-1.5 items-center flex-wrap">
+      <span className="text-[10px] text-muted">利用:</span>
+      {present.map((f) => (
+        <span
+          key={f}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium text-white"
+          style={{ backgroundColor: MODEL_COLORS[f] }}
+        >
+          {MODEL_LABELS[f]}
+        </span>
+      ))}
     </div>
   )
 }

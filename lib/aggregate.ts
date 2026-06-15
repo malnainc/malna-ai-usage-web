@@ -56,6 +56,7 @@ export function buildRanking(rows: UsageRow[], month: string, prevMonth: string)
       cache_create_tokens: r.cache_create,
       cache_read_tokens: r.cache_read,
       model_families: familiesFromRow(r),
+      model_families_present: familiesUsedFromStr(r.models_used),
       delta_pct,
     }
   })
@@ -90,6 +91,23 @@ export function monthlyTrend(rows: UsageRow[]): TrendRow[] {
     map.set(r.month, m)
   }
   return [...map.values()].sort((a, b) => a.month.localeCompare(b.month))
+}
+
+/** models_used の文字列（カンマ区切りモデル名）からファミリー存在リストを返す。量なし・旧データでも動く。 */
+function familiesUsedFromStr(modelsUsed: string): ModelFamily[] {
+  if (!modelsUsed) return []
+  const found = new Set<ModelFamily>()
+  for (const raw of modelsUsed.split(',')) {
+    const n = raw.trim().toLowerCase()
+    if (!n) continue
+    if (n.includes('opus')) found.add('opus')
+    else if (n.includes('sonnet')) found.add('sonnet')
+    else if (n.includes('haiku')) found.add('haiku')
+    else if (n.includes('fable')) found.add('fable')
+    else if (n.startsWith('gpt') || n.startsWith('codex')) found.add('codex')
+    else found.add('other')
+  }
+  return MODEL_FAMILY_ORDER.filter((f) => found.has(f))
 }
 
 /**
@@ -139,14 +157,20 @@ export type ModelBreakdownResult = {
   families: ModelFamilyUsage[]
   /** 当月にモデル別内訳データを1件でも持つメンバーがいたか（無ければ旧データのみ） */
   hasData: boolean
+  /** models_used から導いたファミリー存在一覧（量なし・旧データでも埋まる） */
+  familiesPresent: ModelFamily[]
 }
 
 /** 当月のチーム合計をモデルファミリー別のトークン/コストに集計する。 */
 export function modelBreakdown(rows: UsageRow[], month: string): ModelBreakdownResult {
   const cur = snapshotsForMonth(rows, month)
   const acc = new Map<ModelFamily, { tokens: number; cost: number }>()
+  const presentSet = new Set<ModelFamily>()
   let hasData = false
   for (const r of cur) {
+    for (const f of familiesUsedFromStr(r.models_used)) {
+      presentSet.add(f)
+    }
     for (const f of familiesFromRow(r)) {
       if (f.tokens || f.cost) hasData = true
       const a = acc.get(f.family) ?? { tokens: 0, cost: 0 }
@@ -160,7 +184,8 @@ export function modelBreakdown(rows: UsageRow[], month: string): ModelBreakdownR
     tokens: acc.get(f)!.tokens,
     cost: acc.get(f)!.cost,
   }))
-  return { families, hasData }
+  const familiesPresent = MODEL_FAMILY_ORDER.filter((f) => presentSet.has(f))
+  return { families, hasData, familiesPresent }
 }
 
 export type CoverageMember = { member_name: string; team: string; member_email: string }

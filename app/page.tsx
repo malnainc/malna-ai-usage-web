@@ -136,7 +136,7 @@ export default async function Page({
         </Card>
 
         <Card title={`モデル別利用量（チーム合計・${month || '—'}）`}>
-          <ModelBreakdown families={models.families} hasData={models.hasData} />
+          <ModelBreakdown families={models.families} hasData={models.hasData} familiesPresent={models.familiesPresent} />
         </Card>
 
         <Card title="月推移（チーム合計・億トークン）">

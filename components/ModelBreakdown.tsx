@@ -1,19 +1,37 @@
 import { fmtTokens, fmtCost } from '@/lib/format'
 import { MODEL_LABELS as LABELS, MODEL_COLORS as COLORS } from '@/lib/modelMeta'
-import type { ModelFamilyUsage } from '@/lib/types'
+import type { ModelFamily, ModelFamilyUsage } from '@/lib/types'
 
 export function ModelBreakdown({
   families,
   hasData,
+  familiesPresent = [],
 }: {
   families: ModelFamilyUsage[]
   hasData: boolean
+  familiesPresent?: ModelFamily[]
 }) {
   if (!hasData || families.length === 0) {
     return (
-      <p className="text-sm text-muted">
-        この月にはモデル別の内訳データがありません。各メンバーが収集ツールを更新した翌日以降の月で表示されます。
-      </p>
+      <div>
+        <p className="text-sm text-muted mb-3">
+          この月にはモデル別の内訳データがありません。各メンバーが収集ツールを更新した翌日以降の月で表示されます。
+        </p>
+        {familiesPresent.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            <span className="text-xs text-muted mr-1">利用モデル:</span>
+            {familiesPresent.map((f) => (
+              <span
+                key={f}
+                className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium text-white"
+                style={{ backgroundColor: COLORS[f] }}
+              >
+                {LABELS[f]}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     )
   }
 
