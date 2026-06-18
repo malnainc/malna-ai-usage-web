@@ -12,6 +12,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith('/signin') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/sync') ||
+    pathname.startsWith('/api/og') ||
+    pathname.startsWith('/api/cron') ||
     pathname.startsWith('/api/debug') ||
     pathname.startsWith('/_next')
 
