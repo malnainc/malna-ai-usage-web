@@ -17,6 +17,7 @@ import { Coverage } from '@/components/Coverage'
 import { TrendChart } from '@/components/TrendChart'
 import { MonthPicker } from '@/components/MonthPicker'
 import { CountUp } from '@/components/CountUp'
+import { MemberModelChart } from '@/components/MemberModelChart'
 import { fmtCost } from '@/lib/format'
 import { isReliableMonth, RELIABLE_FROM } from '@/lib/config'
 
@@ -133,6 +134,10 @@ export default async function Page({
 
         <Card title="チーム別">
           <TeamBreakdown teams={teams} />
+        </Card>
+
+        <Card title={`メンバー別モデル利用量（${month || '—'}）`}>
+          <MemberModelChart ranking={ranking} />
         </Card>
 
         <Card title={`モデル別利用量（チーム合計・${month || '—'}）`}>
