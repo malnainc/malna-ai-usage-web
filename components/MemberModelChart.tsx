@@ -51,8 +51,9 @@ export function MemberModelChart({ ranking }: { ranking: RankingEntry[] }) {
 
   if (!hasBreakdown) return null
 
-  const chartData = ranking
+  const chartData = [...ranking]
     .filter((r) => r.total_tokens > 0)
+    .reverse()
     .map((r) => {
       const row: Record<string, string | number> = {
         name: r.member_name,
