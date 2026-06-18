@@ -8,18 +8,17 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  ReferenceLine,
 } from 'recharts'
 import { fmtTokens } from '@/lib/format'
 import { MODEL_LABELS as LABELS, MODEL_COLORS as COLORS } from '@/lib/modelMeta'
 import { MODEL_FAMILY_ORDER } from '@/lib/aggregate'
 import type { ModelFamily, RankingEntry } from '@/lib/types'
 
-const RANK_COLOR: Record<number, string> = {
-  1: '#f59e0b',
-  2: '#94a3b8',
-  3: '#b45309',
-}
+const PODIUM = [
+  { rank: 1, label: '1st', bg: 'linear-gradient(135deg,#fbbf24,#d97706)', text: '#7c3a00', ring: '#f59e0b' },
+  { rank: 2, label: '2nd', bg: 'linear-gradient(135deg,#e2e8f0,#94a3b8)', text: '#1e293b', ring: '#94a3b8' },
+  { rank: 3, label: '3rd', bg: 'linear-gradient(135deg,#fde68a,#b45309)', text: '#451a03', ring: '#b45309' },
+]
 
 function CustomTooltip({
   active,
@@ -58,59 +57,14 @@ function CustomTooltip({
   )
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CustomTick(props: any & { rankMap: Record<string, number> }) {
-  const { rankMap } = props
-  const x = Number(props.x ?? 0)
-  const y = Number(props.y ?? 0)
-  const payload = props.payload as { value: string } | undefined
-  const name = payload?.value ?? ''
-  const rank = rankMap[name]
-  const medal = rank === 1 ? '1st' : rank === 2 ? '2nd' : rank === 3 ? '3rd' : null
-  const color = rank ? (RANK_COLOR[rank] ?? '#9aa0a6') : '#9aa0a6'
-
-  return (
-    <g transform={`translate(${x},${y})`}>
-      {medal && (
-        <text
-          x={0}
-          y={-2}
-          textAnchor="middle"
-          fontSize={10}
-          fontWeight="800"
-          fill={color}
-          letterSpacing={0.5}
-        >
-          {medal}
-        </text>
-      )}
-      <text
-        x={0}
-        y={medal ? 12 : 6}
-        textAnchor="middle"
-        fontSize={11}
-        fill={rank === 1 ? '#f59e0b' : rank === 2 ? '#64748b' : rank === 3 ? '#92400e' : '#9aa0a6'}
-        fontWeight={rank && rank <= 3 ? '700' : '400'}
-      >
-        {name}
-      </text>
-    </g>
-  )
-}
-
 export function MemberModelChart({ ranking }: { ranking: RankingEntry[] }) {
   const hasBreakdown = ranking.some((r) => r.model_families.length > 0)
   if (!hasBreakdown) return null
 
-  const sorted = [...ranking].filter((r) => r.total_tokens > 0).reverse()
+  const sorted = [...ranking].filter((r) => r.total_tokens > 0)
+  // sorted[0] = 1位（最多）, sorted[1] = 2位, ...
 
-  // rank: 右端（一番高い）が1位
-  const rankMap: Record<string, number> = {}
-  sorted.forEach((r, i) => {
-    rankMap[r.member_name] = sorted.length - i
-  })
-
-  const chartData = sorted.map((r) => {
+  const chartData = [...sorted].reverse().map((r) => {
     const row: Record<string, string | number> = { name: r.member_name }
     for (const f of r.model_families) {
       row[f.family] = f.tokens
@@ -119,53 +73,75 @@ export function MemberModelChart({ ranking }: { ranking: RankingEntry[] }) {
   })
 
   const familiesUsed = MODEL_FAMILY_ORDER.filter((f) =>
-    ranking.some((r) => r.model_families.some((mf) => mf.family === f && mf.tokens > 0)),
+    sorted.some((r) => r.model_families.some((mf) => mf.family === f && mf.tokens > 0)),
   )
 
-  // 1位のbar最大値（ReferenceLine用）
-  const topEntry = sorted[sorted.length - 1]
-  const topTotal = topEntry?.total_tokens ?? 0
+  const rankIndex = Object.fromEntries(sorted.map((r, i) => [r.member_name, i]))
 
   return (
-    <div>
-      <ResponsiveContainer width="100%" height={320}>
+    <div className="space-y-4">
+      {/* ポジウム */}
+      <div className="flex gap-3 justify-center flex-wrap">
+        {PODIUM.map(({ rank, label, bg, text, ring }) => {
+          const entry = sorted[rank - 1]
+          if (!entry) return null
+          return (
+            <div
+              key={rank}
+              className="flex flex-col items-center gap-1 rounded-2xl px-4 py-3 min-w-[100px] shadow-md"
+              style={{ background: bg, outline: `2px solid ${ring}`, outlineOffset: '1px' }}
+            >
+              <span
+                className="text-2xl font-black tracking-tight"
+                style={{ color: text }}
+              >
+                {label}
+              </span>
+              <span
+                className="text-sm font-bold leading-tight text-center"
+                style={{ color: text }}
+              >
+                {entry.member_name}
+              </span>
+              <span
+                className="text-xs tabular-nums opacity-80"
+                style={{ color: text }}
+              >
+                {fmtTokens(entry.total_tokens)}
+              </span>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* バーチャート */}
+      <ResponsiveContainer width="100%" height={260}>
         <BarChart
           data={chartData}
-          margin={{ top: 16, right: 8, bottom: 24, left: 0 }}
+          margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
           barCategoryGap="28%"
         >
           <defs>
-            {sorted.map((r, i) => {
-              const rank = rankMap[r.member_name]
+            {[...sorted].reverse().map((r, i) => {
+              const rank = (rankIndex[r.member_name] ?? 99) + 1
               const id = `bg-${i}`
-              const c1 = rank === 1 ? '#fbbf24' : rank === 2 ? '#cbd5e1' : rank === 3 ? '#d97706' : '#60a5fa'
-              const c2 = rank === 1 ? '#d97706' : rank === 2 ? '#94a3b8' : rank === 3 ? '#92400e' : '#2563eb'
+              const c1 = rank === 1 ? '#fbbf24' : rank === 2 ? '#e2e8f0' : rank === 3 ? '#fde68a' : '#60a5fa'
+              const c2 = rank === 1 ? '#d97706' : rank === 2 ? '#94a3b8' : rank === 3 ? '#b45309' : '#2563eb'
               return (
                 <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={c1} stopOpacity={0.9} />
+                  <stop offset="0%" stopColor={c1} stopOpacity={0.95} />
                   <stop offset="100%" stopColor={c2} stopOpacity={1} />
                 </linearGradient>
               )
             })}
           </defs>
 
-          {/* 1位の高さに薄いラインで「壁」を可視化 */}
-          {topTotal > 0 && (
-            <ReferenceLine
-              y={topTotal}
-              stroke="#f59e0b"
-              strokeDasharray="4 4"
-              strokeWidth={1.5}
-              strokeOpacity={0.5}
-            />
-          )}
-
           <XAxis
             dataKey="name"
+            fontSize={11}
+            stroke="#9aa0a6"
             tickLine={false}
             axisLine={false}
-            tick={(props) => <CustomTick {...props} rankMap={rankMap} />}
-            height={40}
           />
           <YAxis
             fontSize={11}
@@ -183,17 +159,17 @@ export function MemberModelChart({ ranking }: { ranking: RankingEntry[] }) {
           <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(0,0,0,0.04)' }} />
 
           {familiesUsed.map((f, fi) => {
-            const isTop = fi === familiesUsed.length - 1
+            const isTopStack = fi === familiesUsed.length - 1
             return (
               <Bar
                 key={f}
                 dataKey={f}
                 stackId="a"
                 fill={COLORS[f]}
-                radius={isTop ? [5, 5, 0, 0] : [0, 0, 0, 0]}
+                radius={isTopStack ? [5, 5, 0, 0] : [0, 0, 0, 0]}
               >
-                {isTop &&
-                  sorted.map((r, i) => (
+                {isTopStack &&
+                  [...sorted].reverse().map((r, i) => (
                     <Cell key={i} fill={`url(#bg-${i})`} />
                   ))}
               </Bar>
@@ -203,13 +179,10 @@ export function MemberModelChart({ ranking }: { ranking: RankingEntry[] }) {
       </ResponsiveContainer>
 
       {/* 凡例 */}
-      <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-1 px-1">
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5 px-1">
         {familiesUsed.map((f) => (
           <span key={f} className="flex items-center gap-1.5 text-xs text-muted">
-            <span
-              className="inline-block w-2 h-2 rounded-full"
-              style={{ backgroundColor: COLORS[f] }}
-            />
+            <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[f] }} />
             {LABELS[f]}
           </span>
         ))}
