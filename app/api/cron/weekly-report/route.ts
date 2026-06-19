@@ -81,10 +81,14 @@ export async function GET(req: NextRequest) {
   const channel = 'C034LBMLRGE'
   const baseUrl = process.env.NEXTAUTH_URL ?? 'https://malna-ai-usage-web.vercel.app'
 
+  console.log('[weekly-report] slackToken set:', !!slackToken)
+
   if (!slackToken) {
+    console.error('[weekly-report] SLACK_BOT_TOKEN not set')
     return NextResponse.json({ error: 'SLACK_BOT_TOKEN not set' }, { status: 500 })
   }
 
+  console.log('[weekly-report] fetching rows...')
   const rows = await getRows()
   const months = listMonths(rows)
   const month = months[0] ?? ''
