@@ -139,18 +139,11 @@ export async function GET(req: NextRequest) {
         text: { type: 'mrkdwn', text: message },
       },
       {
-        type: 'image',
-        image_url: imageUrl,
-        alt_text: `AI活用量ランキング ${month}`,
-      },
-      {
-        type: 'context',
-        elements: [
-          {
-            type: 'mrkdwn',
-            text: `<${baseUrl}|詳細はダッシュボードで>`,
-          },
-        ],
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `<${imageUrl}|ランキング画像を見る> ｜ <${baseUrl}|ダッシュボード>`,
+        },
       },
     ],
   }
