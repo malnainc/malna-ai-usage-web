@@ -113,12 +113,14 @@ export async function GET(req: NextRequest) {
     rank: i + 1,
   }))
 
+  console.log('[weekly-report] sorted members:', sorted.length, 'total tokens:', totalTokens)
   let message = await generateMessage({
     month,
     ranking: rankingForPrompt,
     totalTokens,
     prevTotalTokens,
   })
+  console.log('[weekly-report] message generated, length:', message.length)
   if (isTest) message = `【テスト】\n${message}`
 
   const imageUrl = `${baseUrl}/api/og/leaderboard?month=${encodeURIComponent(month)}`
@@ -147,6 +149,7 @@ export async function GET(req: NextRequest) {
     ],
   }
 
+  console.log('[weekly-report] posting to Slack channel:', channel)
   const res = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
     headers: {
@@ -156,6 +159,7 @@ export async function GET(req: NextRequest) {
     body: JSON.stringify(body),
   })
   const json = await res.json() as { ok: boolean; error?: string }
+  console.log('[weekly-report] Slack response:', json.ok, json.error ?? '')
 
   if (!json.ok) {
     return NextResponse.json({ error: json.error }, { status: 500 })
