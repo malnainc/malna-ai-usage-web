@@ -91,8 +91,11 @@ export async function GET(req: NextRequest) {
   console.log('[weekly-report] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY)
   console.log('[weekly-report] GOOGLE_SA_JSON set:', !!process.env.GOOGLE_SA_JSON)
   console.log('[weekly-report] SUPABASE_URL set:', !!process.env.SUPABASE_URL)
+  console.log('[weekly-report] SHEET_ID set:', !!process.env.SHEET_ID)
   console.log('[weekly-report] fetching rows...')
   const rows = await getRows()
+  console.log('[weekly-report] rows count:', rows.length)
+  console.log('[weekly-report] months:', listMonths(rows).slice(0, 3))
   const months = listMonths(rows)
   const month = months[0] ?? ''
   const prevMonth = prevMonthOf(month)
