@@ -88,6 +88,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'SLACK_BOT_TOKEN not set' }, { status: 500 })
   }
 
+  console.log('[weekly-report] ANTHROPIC_API_KEY set:', !!process.env.ANTHROPIC_API_KEY)
+  console.log('[weekly-report] GOOGLE_SA_JSON set:', !!process.env.GOOGLE_SA_JSON)
+  console.log('[weekly-report] SUPABASE_URL set:', !!process.env.SUPABASE_URL)
   console.log('[weekly-report] fetching rows...')
   const rows = await getRows()
   const months = listMonths(rows)
