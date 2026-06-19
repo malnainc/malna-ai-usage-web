@@ -213,7 +213,7 @@ export function coverage(rows: UsageRow[], month: string, prevMonth: string): Co
 }
 
 export function listMonths(rows: UsageRow[]): string[] {
-  return [...new Set(rows.map((r) => r.month))].filter(Boolean).sort((a, b) => b.localeCompare(a))
+  return [...new Set(rows.map((r) => r.month))].filter((m) => /^\d{4}-\d{2}$/.test(m)).sort((a, b) => b.localeCompare(a))
 }
 
 export function prevMonthOf(month: string): string {
