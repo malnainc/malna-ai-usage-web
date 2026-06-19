@@ -114,13 +114,19 @@ export async function GET(req: NextRequest) {
   }))
 
   console.log('[weekly-report] sorted members:', sorted.length, 'total tokens:', totalTokens)
-  let message = await generateMessage({
-    month,
-    ranking: rankingForPrompt,
-    totalTokens,
-    prevTotalTokens,
-  })
-  console.log('[weekly-report] message generated, length:', message.length)
+  let message: string
+  try {
+    message = await generateMessage({
+      month,
+      ranking: rankingForPrompt,
+      totalTokens,
+      prevTotalTokens,
+    })
+    console.log('[weekly-report] message generated, length:', message.length)
+  } catch (e) {
+    console.error('[weekly-report] generateMessage failed:', String(e))
+    return NextResponse.json({ error: 'generateMessage failed', detail: String(e) }, { status: 500 })
+  }
   if (isTest) message = `【テスト】\n${message}`
 
   const imageUrl = `${baseUrl}/api/og/leaderboard?month=${encodeURIComponent(month)}`
