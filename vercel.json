@@ -2,5 +2,10 @@
   "crons": [
     { "path": "/api/sync", "schedule": "0 9 * * *" },
     { "path": "/api/cron/weekly-report", "schedule": "0 0 * * 1" }
-  ]
+  ],
+  "functions": {
+    "app/api/cron/weekly-report/route.ts": {
+      "maxDuration": 60
+    }
+  }
 }
