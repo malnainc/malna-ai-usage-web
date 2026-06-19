@@ -75,6 +75,7 @@ export async function GET(req: NextRequest) {
   if (!isVercelCron && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
+  const isTest = new URL(req.url).searchParams.get('test') === '1'
 
   const slackToken = process.env.SLACK_BOT_TOKEN
   const channel = 'C034LBMLRGE'
@@ -102,12 +103,13 @@ export async function GET(req: NextRequest) {
     rank: i + 1,
   }))
 
-  const message = await generateMessage({
+  let message = await generateMessage({
     month,
     ranking: rankingForPrompt,
     totalTokens,
     prevTotalTokens,
   })
+  if (isTest) message = `【テスト】\n${message}`
 
   const imageUrl = `${baseUrl}/api/og/leaderboard?month=${encodeURIComponent(month)}`
 
