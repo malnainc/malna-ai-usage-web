@@ -129,7 +129,16 @@ export async function GET(req: NextRequest) {
   }
   if (isTest) message = `【テスト】\n${message}`
 
-  const imageUrl = `${baseUrl}/api/og/leaderboard?month=${encodeURIComponent(month)}`
+  const rankingText = sorted
+    .slice(0, 8)
+    .map((r, i) => {
+      const delta =
+        r.delta_pct !== null
+          ? ` (先月比${r.delta_pct >= 0 ? '+' : ''}${r.delta_pct}%)`
+          : ' (初登場)'
+      return `${i + 1}. ${r.member_name}　${fmtTokens(r.total_tokens)}${delta}`
+    })
+    .join('\n')
 
   const body = {
     channel,
@@ -142,7 +151,14 @@ export async function GET(req: NextRequest) {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `<${imageUrl}|ランキング画像を見る> ｜ <${baseUrl}|ダッシュボード>`,
+          text: `*${month} 累積ランキング*\n${rankingText}`,
+        },
+      },
+      {
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `<${baseUrl}|ダッシュボードで詳細を見る>`,
         },
       },
     ],
