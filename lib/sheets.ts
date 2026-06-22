@@ -32,7 +32,7 @@ export async function readSheetRows(): Promise<UsageRow[]> {
   const sheets = google.sheets({ version: 'v4', auth })
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: sheetId,
-    range: 'raw!A1:T',
+    range: 'raw!A1:Z',
     valueRenderOption: 'UNFORMATTED_VALUE',
   })
   const values = res.data.values ?? []
