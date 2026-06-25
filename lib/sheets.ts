@@ -38,7 +38,29 @@ export async function readSheetRows(): Promise<UsageRow[]> {
   const values = res.data.values ?? []
   if (values.length < 2) return []
 
-  const header = (values[0] as unknown[]).map((h) => String(h))
+  // ヘッダー行は重複・旧版が混在しうる（収集ツールの履歴的バグで、先頭に
+  // model_breakdown 列を欠く旧ヘッダーが残ることがある）。values[0] を盲目的に
+  // 使うと新しい列を取りこぼすため、既知の列を最も多く含むヘッダー行を採用する。
+  const KNOWN: readonly string[] = [...COLUMNS, ...OPTIONAL_COLUMNS]
+  const isHeaderRow = (row: unknown[]) => {
+    const set = new Set(row.map((c) => String(c)))
+    return set.has('timestamp_jst') && set.has('member_email')
+  }
+  const headerScore = (row: unknown[]) => {
+    const set = new Set(row.map((c) => String(c)))
+    return KNOWN.filter((c) => set.has(c)).length
+  }
+  let header = (values[0] as unknown[]).map((h) => String(h))
+  let best = headerScore(values[0] as unknown[])
+  for (const row of values) {
+    if (!isHeaderRow(row as unknown[])) continue
+    const s = headerScore(row as unknown[])
+    if (s > best) {
+      best = s
+      header = (row as unknown[]).map((h) => String(h))
+    }
+  }
+
   const missing = COLUMNS.filter((c) => !header.includes(c))
   if (missing.length > 0) {
     throw new Error(`Sheet header is missing columns: ${missing.join(', ')}`)
@@ -52,7 +74,8 @@ export async function readSheetRows(): Promise<UsageRow[]> {
     return i >= 0 ? String(v[i] ?? '') : ''
   }
 
-  return values.slice(1).map((v) => ({
+  // データ行に紛れた重複ヘッダー行はスキップする。
+  return values.filter((v) => !isHeaderRow(v as unknown[])).map((v) => ({
     captured_at: str(v[idx('timestamp_jst')]),
     snapshot_date: str(v[idx('date')]),
     member_name: str(v[idx('member_name')]),
