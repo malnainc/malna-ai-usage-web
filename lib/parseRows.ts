@@ -1,6 +1,14 @@
 import type { UsageRow } from './types'
 
 // 必須列（これが欠けるとシート構成が壊れているとみなす）
+//
+// 注意: ここに列を追加する前に、実シートのヘッダー行（raw!A1:Z1）に本当にその列が
+// 存在するか確認すること。2026-07-01: fugu_tokens/fugu_cost を必須列に加える未コミット
+// のローカル編集（Fugu連携の作業途中）を `vercel --prod` でそのまま本番デプロイしてしまい、
+// collector側・実シート側にまだ存在しないこの2列のせいで本番の `/` が
+// "Sheet header is missing columns" で全滅した（git履歴には一切残らないバグだった）。
+// 収集側が実際に書き出せるようになるまでは OPTIONAL_COLUMNS に置く。
+// また、未コミットの変更を `vercel --prod` でデプロイしない（コミット後にデプロイする）。
 export const COLUMNS = [
   'timestamp_jst', 'date', 'member_name', 'member_email', 'team', 'hostname', 'month',
   'input', 'output', 'cache_create', 'cache_read', 'total_tokens', 'cost_usd',
