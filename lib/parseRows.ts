@@ -8,7 +8,7 @@ export const COLUMNS = [
 ] as const
 
 // 任意列（収集側の改修より前の月には存在しないため、欠けても許容する）
-export const OPTIONAL_COLUMNS = ['model_breakdown'] as const
+export const OPTIONAL_COLUMNS = ['model_breakdown', 'fugu_tokens', 'fugu_cost'] as const
 
 type Col = (typeof COLUMNS)[number] | (typeof OPTIONAL_COLUMNS)[number]
 
@@ -91,6 +91,8 @@ export function parseUsageRows(values: unknown[][]): UsageRow[] {
       claude_cost: num(v[idx('claude_cost')]),
       codex_tokens: num(v[idx('codex_tokens')]),
       codex_cost: num(v[idx('codex_cost')]),
+      fugu_tokens: num(v[idx('fugu_tokens')]),
+      fugu_cost: num(v[idx('fugu_cost')]),
       models_used: str(v[idx('models_used')]),
       ccusage_version: str(v[idx('ccusage_version')]),
       model_breakdown: optStr(v, 'model_breakdown'),

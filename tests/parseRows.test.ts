@@ -7,7 +7,7 @@ const LEGACY_HEADER = [...COLUMNS]
 // 20列の新ヘッダー
 const NEW_HEADER = [...COLUMNS, 'model_breakdown']
 
-// 1メンバー1月のデータ行を組み立てる（20列）
+// 1メンバー1月のデータ行を組み立てる（24列）
 function dataRow(opts: {
   email: string
   month: string
@@ -106,7 +106,7 @@ describe('parseUsageRows — Sheets API の癖（Fugu レビュー由来）', ()
       timestamp_jst: '2026-06-01T00:00:00+09:00', date: '2026-06-01', member_name: 'z',
       member_email: 'z@x.co', team: 't', hostname: 'h', month: '2026-06',
       input: 1, output: 1, cache_create: 0, cache_read: 0, total_tokens: 300, cost_usd: 3,
-      claude_tokens: 300, claude_cost: 3, codex_tokens: 0, codex_cost: 0, models_used: 'opus',
+      claude_tokens: 300, claude_cost: 3, codex_tokens: 0, codex_cost: 0, fugu_tokens: 0, fugu_cost: 0, models_used: 'opus',
       ccusage_version: 'v', model_breakdown: JSON.stringify({ opus: { tokens: 300, cost: 3 } }),
     }
     const rows = parseUsageRows([header, header.map((c) => all[c])])
